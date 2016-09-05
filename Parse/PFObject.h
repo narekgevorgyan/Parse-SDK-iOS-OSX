@@ -112,7 +112,7 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
 /**
  The ACL for this object.
  */
-@property (nullable, nonatomic, strong) BOOL avoidDeepSave;
+@property (nonatomic, assign) BOOL avoidDeepSave;
 
 /**
  Returns an array of the keys contained in this object.
