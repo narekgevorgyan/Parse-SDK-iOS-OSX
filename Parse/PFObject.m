@@ -2060,9 +2060,10 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
 
 - (id)objectForKey:(NSString *)key {
     @synchronized (lock) {
-        PFConsistencyAssert([self isDataAvailableForKey:key],
-                            @"Key \"%@\" has no data.  Call fetchIfNeeded before getting its value.", key);
-
+        if(![self isDataAvailableForKey:key]) {
+            return nil;
+        }
+        
         id result = _estimatedData[key];
         if ([key isEqualToString:PFObjectACLRESTKey] && [result isKindOfClass:[PFACL class]]) {
             PFACL *acl = result;
