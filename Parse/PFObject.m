@@ -1243,6 +1243,10 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
         if (completeData) {
             [self removeOldKeysAfterFetch:result];
         }
+        [operationSetQueue removeAllObjects];
+        [operationSetQueue addObject:[[PFOperationSet alloc] init]];
+        
+
         [self rebuildEstimatedData];
     }
 }
@@ -1273,6 +1277,7 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
             self._state = [self._state copyByMutatingWithBlock:^(PFMutableObjectState *state) {
                 [state applyOperationSet:operationsBeforeSave];
             }];
+            
 
             [self _mergeFromServerWithResult:result decoder:decoder completeData:NO];
             [self rebuildEstimatedData];
