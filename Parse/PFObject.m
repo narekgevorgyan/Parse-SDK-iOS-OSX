@@ -242,9 +242,14 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
         }
 
     } else if ([node isKindOfClass:[PFObject class]]) {
+        if (!dirtyChildren) {
+            return;
+        }
         PFObject *object = (PFObject *)node;
         NSDictionary *toSearch = nil;
-
+        if([object isKindOfClass:[PFUser class]] && object.objectId != currentUser.objectId) {
+            return;
+        }
         @synchronized ([object lock]) {
             // Check for cycles of new objects.  Any such cycle means it will be
             // impossible to save this collection of objects, so throw an exception.
@@ -277,11 +282,14 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
                               seen:seen
                            seenNew:seenNew
                        currentUser:currentUser];
-
+        
         if ([object isDirty:NO]) {
             [dirtyChildren addObject:object];
         }
     } else if ([node isKindOfClass:[PFFile class]]) {
+        if(!dirtyFiles) {
+            return;
+        }
         PFFile *file = (PFFile *)node;
         if (!file.url) {
             [dirtyFiles addObject:node];
@@ -545,6 +553,10 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
     return [BFTask taskFromExecutor:[BFExecutor defaultExecutor] withBlock:^id{
         NSMutableSet *uniqueObjects = [NSMutableSet set];
         NSMutableSet *uniqueFiles = [NSMutableSet set];
+        if (object.avoidDeepSave) {
+            uniqueObjects = nil;
+            object.avoidDeepSave = NO;
+        }
         [self collectDirtyChildren:object children:uniqueObjects files:uniqueFiles currentUser:currentUser];
         for (PFFile *file in uniqueFiles) {
             if (!file.url) {
@@ -1231,6 +1243,10 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
         if (completeData) {
             [self removeOldKeysAfterFetch:result];
         }
+        [operationSetQueue removeAllObjects];
+        [operationSetQueue addObject:[[PFOperationSet alloc] init]];
+        
+
         [self rebuildEstimatedData];
     }
 }
@@ -1261,6 +1277,7 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
             self._state = [self._state copyByMutatingWithBlock:^(PFMutableObjectState *state) {
                 [state applyOperationSet:operationsBeforeSave];
             }];
+            
 
             [self _mergeFromServerWithResult:result decoder:decoder completeData:NO];
             [self rebuildEstimatedData];
@@ -2048,9 +2065,10 @@ static void PFObjectAssertValueIsKindOfValidClass(id object) {
 
 - (id)objectForKey:(NSString *)key {
     @synchronized (lock) {
-        PFConsistencyAssert([self isDataAvailableForKey:key],
-                            @"Key \"%@\" has no data.  Call fetchIfNeeded before getting its value.", key);
-
+        if(![self isDataAvailableForKey:key]) {
+            return nil;
+        }
+        
         id result = _estimatedData[key];
         if ([key isEqualToString:PFObjectACLRESTKey] && [result isKindOfClass:[PFACL class]]) {
             PFACL *acl = result;

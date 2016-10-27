@@ -86,7 +86,7 @@
 
             return [PFObject _objectFromDictionary:result
                                   defaultClassName:className
-                                      completeData:YES
+                                      completeData:NO
                                            decoder:self];
 
         } else {

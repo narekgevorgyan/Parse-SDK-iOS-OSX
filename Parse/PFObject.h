@@ -110,6 +110,11 @@ NS_REQUIRES_PROPERTY_DEFINITIONS
 @property (nullable, nonatomic, strong) PFACL *ACL;
 
 /**
+ The ACL for this object.
+ */
+@property (nonatomic, assign) BOOL avoidDeepSave;
+
+/**
  Returns an array of the keys contained in this object.
 
  This does not include `createdAt`, `updatedAt`, `authData`, or `objectId`.
